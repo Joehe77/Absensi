@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi GPS — Sekali Sehari</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h1>📍 Absensi GPS — Sekali Sehari</h1>
+
+  <div class="card">
+    <div class="status">
+      <span class="dot waiting" id="dot"></span>
+      <span id="statusText">Menunggu GPS...</span>
+    </div>
+    <div class="info" id="gpsInfo">Mendeteksi lokasi Anda...</div>
+  </div>
+
+  <div id="absenBanner"></div>
+
+  <!-- ===== SETUP LOKASI KERJA ===== -->
+  <div class="card" id="setupCard" style="border-style: dashed;">
+    <div style="font-weight:600; margin-bottom:4px;">🔧 Setup Lokasi Kerja</div>
+    <div class="info">Buka halaman ini <b>di lokasi kerja</b>, lalu tekan tombol di bawah. Koordinat akan tersimpan otomatis dan tidak perlu diatur lagi.</div>
+    <button id="btnAmbil" onclick="ambilDanSimpanLokasi()">📌 Ambil & Simpan Lokasi Ini</button>
+    <div id="lokasiTersimpanInfo"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:600; margin-bottom:8px;">Riwayat Absensi</div>
+    <div id="logList"><div class="info">Belum ada absensi.</div></div>
+    <button class="secondary" onclick="resetAbsenHariIni()">🔄 Reset Absen Hari Ini</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
