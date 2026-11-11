@@ -1,0 +1,124 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container { max-width: 480px; margin: 0 auto; }
+
+h1 { font-size: 1.3rem; margin-bottom: 16px; }
+
+.card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #334155;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #64748b;
+}
+.dot.inside {
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+}
+.dot.outside { background: #ef4444; }
+.dot.waiting {
+  background: #f59e0b;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse { 50% { opacity: .3; } }
+
+.info {
+  font-size: .85rem;
+  color: #94a3b8;
+  margin-top: 8px;
+  line-height: 1.7;
+}
+.info b { color: #e2e8f0; }
+
+.absen-ok {
+  background: #14532d;
+  border: 1px solid #22c55e;
+  color: #bbf7d0;
+  padding: 14px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.absen-warn {
+  background: #78350f;
+  border: 1px solid #f59e0b;
+  color: #fde68a;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: .9rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.lokasi-tersimpan {
+  background: #0c4a6e;
+  border: 1px solid #0ea5e9;
+  color: #bae6fd;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: .85rem;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 600;
+  margin-top: 10px;
+}
+button:hover { background: #2563eb; }
+
+button.secondary { background: #475569; }
+button.secondary:hover { background: #334155; }
+
+button.danger { background: #dc2626; }
+button.danger:hover { background: #b91c1c; }
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#logList { margin-top: 6px; }
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #334155;
+  font-size: .9rem;
+}
+.log-item:last-child { border-bottom: none; }
+
+.badge-in { color: #22c55e; font-weight: 700; }
