@@ -223,4 +223,157 @@ function renderSetupCard() {
       <div class="info-row">${icons.pin} Lng: <b>${lok.lng}</b></div>
       <div class="info-row">${icons.ruler} Akurasi saat ambil: <b>±${lok.akurasi} m</b></div>
       <div class="info-row">${icons.clock} Disimpan: <b>${tgl}</b></div>
-      <button class="btn-danger" onclick="hapusL
+            <button class="btn-danger" onclick="hapusLokasiKerja()">
+        ${icons.trash} Hapus & Setup Ulang
+      </button>
+    </div>`;
+  btnAmbil.innerHTML = `${icons.refresh} Perbarui Lokasi Kerja`;
+}
+
+/* ============================================================
+   LOGIKA UTAMA — AUTO ABSEN
+   ============================================================ */
+function prosesPosisi(pos) {
+  const { latitude, longitude, accuracy } = pos.coords;
+  const lokasiKerja = getLokasiKerja();
+
+  if (!lokasiKerja) {
+    setStatus('waiting', 'Lokasi kerja belum diatur');
+    gpsInfo.innerHTML = `
+      <div class="info-row">${icons.pin} Posisi Anda: <b>${latitude.toFixed(6)}, ${longitude.toFixed(6)}</b></div>
+      <div class="info-row">${icons.ruler} Akurasi: <b>±${Math.round(accuracy)} m</b></div>
+      <div style="color:var(--warning); margin-top:6px;">Atur lokasi kerja dulu di bawah ⬇</div>
+    `;
+    return;
+  }
+
+  const jarak = hitungJarak(latitude, longitude, lokasiKerja.lat, lokasiKerja.lng);
+
+  gpsInfo.innerHTML = `
+    <div class="info-row">${icons.pin} Lat: <b>${latitude.toFixed(6)}</b> • Lng: <b>${longitude.toFixed(6)}</b></div>
+    <div class="info-row">${icons.target} Jarak ke lokasi kerja: <b>${Math.round(jarak)} m</b></div>
+    <div class="info-row">${icons.ruler} Akurasi GPS: <b>±${Math.round(accuracy)} m</b></div>
+    <div class="info-row">${icons.building} Radius absen: <b>${RADIUS_METER} m</b></div>
+  `;
+
+  const dalamRadius = jarak <= RADIUS_METER;
+  const akurasiCukup = accuracy <= MIN_AKURASI;
+
+  if (dalamRadius && akurasiCukup) {
+    setStatus('inside', 'Di dalam area kerja');
+    if (!sudahAbsenHariIni()) {
+      catatAbsen(jarak);
+    }
+  } else if (dalamRadius && !akurasiCukup) {
+    setStatus('waiting', 'Menunggu sinyal GPS lebih akurat...');
+  } else {
+    setStatus('outside', 'Di luar area kerja');
+  }
+}
+
+function catatAbsen(jarak) {
+  const sekarang = Date.now();
+  const logs = JSON.parse(localStorage.getItem(getUserKey('absensi_log')) || '[]');
+  logs.push({ waktu: sekarang, jarak: Math.round(jarak), tanggal: tanggalHariIni() });
+  localStorage.setItem(getUserKey('absensi_log'), JSON.stringify(logs));
+
+  // Kunci anti-ganda
+  localStorage.setItem(getUserKey('absensi_last_date'), tanggalHariIni());
+  localStorage.setItem(getUserKey('absensi_last_time'), String(sekarang));
+
+  renderLog();
+  renderBanner();
+  showToast('Absensi berhasil dicatat!');
+  notifikasi('Absensi berhasil dicatat pukul ' + new Date(sekarang).toLocaleTimeString('id-ID'));
+}
+
+function notifikasi(msg) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Absensi GPS', { body: msg });
+  }
+}
+
+/* ============================================================
+   AMBIL & SIMPAN LOKASI KERJA
+   ============================================================ */
+function ambilDanSimpanLokasi() {
+  if (!navigator.geolocation) {
+    alert('Browser tidak mendukung GPS.');
+    return;
+  }
+
+  btnAmbil.disabled = true;
+  btnAmbil.innerHTML = 'Mengambil lokasi...';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      const data = simpanLokasiKerja(latitude, longitude, accuracy);
+
+      renderSetupCard();
+      renderBanner();
+      showToast('Lokasi kerja berhasil disimpan!');
+      
+      navigator.geolocation.getCurrentPosition(prosesPosisi, () => {}, {
+        enableHighAccuracy: true, maximumAge: 0, timeout: 15000
+      });
+    },
+    (err) => {
+      btnAmbil.disabled = false;
+      renderSetupCard();
+      showToast('Gagal ambil lokasi. Pastikan GPS & izin aktif.', 'error');
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+  );
+}
+
+/* ============================================================
+   START TRACKING & RESET
+   ============================================================ */
+function startTracking() {
+  if (!navigator.geolocation) {
+    setStatus('outside', 'GPS tidak didukung browser');
+    return;
+  }
+  setStatus('waiting', 'Mendeteksi lokasi...');
+
+  watchId = navigator.geolocation.watchPosition(
+    prosesPosisi,
+    (err) => { setStatus('outside', 'Gagal GPS: ' + err.message); },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+  );
+
+  timerId = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(prosesPosisi, () => {}, {
+      enableHighAccuracy: true, maximumAge: 5000, timeout: 15000
+    });
+  }, CHECK_INTERVAL);
+}
+
+function resetAbsenHariIni() {
+  if (!confirm('Reset absen hari ini? (riwayat tidak dihapus, hanya bisa absen lagi hari ini)')) return;
+  localStorage.removeItem(getUserKey('absensi_last_date'));
+  localStorage.removeItem(getUserKey('absensi_last_time'));
+  renderBanner();
+  showToast('Absen hari ini berhasil di-reset.');
+}
+
+/* ============================================================
+   INIT APLIKASI & SERVICE WORKER (PWA)
+   ============================================================ */
+window.onload = () => {
+  const savedSession = localStorage.getItem('app_session');
+  if (savedSession) {
+    currentUser = savedSession;
+    masukKeAplikasi();
+  }
+  
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Daftarkan Service Worker untuk PWA (Wajib untuk APK GPS)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW gagal:', err));
+  }
+};
